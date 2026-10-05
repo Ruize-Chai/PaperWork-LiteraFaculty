@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paperwork-literafaculty.example/schema/paper-ir-v0.1.schema.json",
+  "title": "Paper IR v0.1",
+  "type": "object",
+  "required": ["paper_ir_version", "metadata", "claims", "evidence", "sections"],
+  "properties": {
+    "paper_ir_version": {"const": "0.1"},
+    "metadata": {"$ref": "#/$defs/metadata"},
+    "thesis": {"type": "object", "properties": {"primary_question": {"type": ["string", "null"]}, "central_result": {"type": ["string", "null"]}, "novelty": {"type": "array", "items": {"type": "string"}}, "scope": {"type": "array", "items": {"type": "string"}}, "exclusions": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": true},
+    "claims": {"type": "array", "items": {"$ref": "#/$defs/claim"}},
+    "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+    "equations": {"$ref": "#/$defs/objectList"},
+    "figures": {"$ref": "#/$defs/objectList"},
+    "tables": {"$ref": "#/$defs/objectList"},
+    "citations": {"$ref": "#/$defs/objectList"},
+    "sections": {"$ref": "#/$defs/objectList"},
+    "limitations": {"$ref": "#/$defs/objectList"},
+    "open_questions": {"$ref": "#/$defs/objectList"},
+    "dependencies": {"type": "array", "items": {"type": "object", "required": ["source", "target"], "properties": {"source": {"type": "string"}, "target": {"type": "string"}, "relationship": {"type": "string"}}, "additionalProperties": true}},
+    "next_actions": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "metadata": {"type": "object", "properties": {"title": {"type": ["string", "null"]}, "authors": {"type": "array"}, "target_venue": {"type": ["string", "null"]}, "manuscript_type": {"type": "string"}}, "additionalProperties": true},
+    "objectList": {"type": "array", "items": {"type": "object", "required": ["id"], "properties": {"id": {"type": "string"}}, "additionalProperties": true}},
+    "claim": {"type": "object", "required": ["id", "statement", "strength", "status", "support"], "properties": {"id": {"type": "string", "minLength": 1}, "type": {"type": "string"}, "statement": {"type": "object"}, "strength": {"enum": ["weak", "moderate", "strong"]}, "status": {"enum": ["PROPOSED", "PARTIAL", "SUPPORTED", "CONTESTED", "REJECTED", "SUPERSEDED"]}, "support": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}}, "figures": {"type": "array", "items": {"type": "string"}}, "citations": {"type": "array", "items": {"type": "string"}}, "limitations": {"type": "array"}}, "additionalProperties": true},
+    "evidence": {"type": "object", "required": ["id", "type", "source"], "properties": {"id": {"type": "string", "minLength": 1}, "type": {"enum": ["numerical_experiment", "analytic_derivation", "theorem", "proof", "dataset", "measurement", "simulation", "benchmark", "literature_result", "external_fact", "figure", "table", "notebook_output", "code_execution"]}, "source": {"type": "object"}, "result": {"type": "object"}, "conditions": {"type": "object"}, "limitations": {"type": "array"}}, "additionalProperties": true}
+  }
+}

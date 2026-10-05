@@ -1,0 +1,8 @@
+{
+  "paper_ir_version": "0.1",
+  "metadata": {"title": "Audit fixture", "authors": []},
+  "claims": [{"id": "C1", "statement": {"semantic": "A test claim."}, "strength": "strong", "status": "SUPPORTED", "support": {"numerical": ["E1"]}, "figures": ["FIG_MISSING"]}],
+  "evidence": [{"id": "E1", "type": "numerical_experiment", "source": {"path": "fixture.csv"}}],
+  "sections": [{"id": "S1", "title": "Results", "text": "The result is shown in [[FIG_MISSING]].", "claims": ["C1"], "evidence": ["E1"]}],
+  "dependencies": []
+}

@@ -1,0 +1,33 @@
+{
+  "paper_ir_version": "0.1",
+  "metadata": {"title": "A toy convergence result", "authors": ["Ada Researcher"], "target_venue": "generic-scientific", "manuscript_type": "research_article"},
+  "thesis": {"primary_question": "How fast does the midpoint estimate converge?", "central_result": "The error decreases quadratically with step size in this smooth example.", "novelty": [], "scope": ["smooth scalar functions"], "exclusions": ["nonsmooth functions"]},
+  "claims": [
+    {"id": "C_QUADRATIC", "type": "quantitative_result", "statement": {"symbolic": "|f(x)-m_h| = O(h^2)", "semantic": "The midpoint estimate has second-order error for a smooth scalar function."}, "strength": "strong", "status": "SUPPORTED", "support": {"theoretical": ["THM_TAYLOR"], "numerical": ["EXP_STEP_SWEEP"]}, "figures": ["FIG_ERROR"], "citations": [], "limitations": ["Illustrated for f(x)=x^2 on [0,1]."]},
+    {"id": "C_BACKGROUND", "type": "background", "statement": {"semantic": "The midpoint rule is a standard quadrature method."}, "strength": "moderate", "status": "PROPOSED", "support": {}, "citations": ["REF_QUADRATURE"]}
+  ],
+  "evidence": [
+    {"id": "THM_TAYLOR", "type": "analytic_derivation", "source": {"path": "research/derivation.md", "commit": "example-v1"}, "result": {"summary": "Taylor expansion about the interval midpoint leaves an O(h^2) error term."}, "conditions": {"smoothness": "C^2"}, "limitations": ["Requires a bounded second derivative."]},
+    {"id": "EXP_STEP_SWEEP", "type": "numerical_experiment", "source": {"path": "research/step_sweep.csv", "commit": "example-v1", "command": "python step_sweep.py"}, "result": {"step_sizes": [0.5, 0.25, 0.125], "observed_error_ratios": [4, 4]}, "conditions": {"function": "x^2", "interval": [0, 1]}, "limitations": ["Small illustrative sweep; not a broad benchmark."]},
+    {"id": "E_REF_REQUIREMENT", "type": "literature_result", "source": {"requirement_id": "REF_QUADRATURE", "status": "citation_requirement_only"}, "result": {"summary": "Replace this requirement with a verified citation before publication."}}
+  ],
+  "equations": [{"id": "EQ_ERROR", "latex": "|f(x)-m_h| = O(h^2)", "symbols": ["f", "x", "m_h", "h"]}],
+  "figures": [{"id": "FIG_ERROR", "path": "figures/error-vs-step.pdf", "caption": "Error decreases by a factor of four when h is halved in this toy example.", "evidence": ["EXP_STEP_SWEEP"]}],
+  "tables": [],
+  "citations": [{"id": "REF_QUADRATURE", "doi": null, "role": "BACKGROUND", "verification_status": "unresolved", "requirement": "Foundational quadrature reference; do not publish as resolved."}],
+  "sections": [
+    {"id": "SEC_RESULTS", "title": "Results", "role": "establish_claim", "claims": ["C_QUADRATIC"], "evidence": ["EXP_STEP_SWEEP", "THM_TAYLOR"], "text": "For the quadratic test function, halving the step size reduces the observed error by a factor of four, consistent with the second-order prediction [[C_QUADRATIC]]. Figure [[FIG_ERROR]] summarizes the sweep."},
+    {"id": "SEC_ABSTRACT", "title": "Abstract", "role": "summarize", "claims": ["C_QUADRATIC"], "evidence": ["THM_TAYLOR", "EXP_STEP_SWEEP"], "status": "pending", "text": "We derive a second-order midpoint error estimate and illustrate it numerically for a smooth toy problem."}
+  ],
+  "limitations": [{"id": "L_SCOPE", "text": "The numerical illustration covers one function and a short step-size sweep."}],
+  "open_questions": [{"id": "Q_CITATION", "text": "Resolve the background citation requirement."}],
+  "dependencies": [
+    {"source": "THM_TAYLOR", "target": "C_QUADRATIC", "relationship": "supports"},
+    {"source": "EXP_STEP_SWEEP", "target": "C_QUADRATIC", "relationship": "supports"},
+    {"source": "C_QUADRATIC", "target": "FIG_ERROR", "relationship": "depicted_by"},
+    {"source": "FIG_ERROR", "target": "SEC_RESULTS", "relationship": "rendered_in"},
+    {"source": "C_QUADRATIC", "target": "SEC_RESULTS", "relationship": "argued_in"},
+    {"source": "C_QUADRATIC", "target": "SEC_ABSTRACT", "relationship": "summarized_in"}
+  ],
+  "next_actions": ["Verify the background citation.", "Replace the toy figure with a generated artifact and immutable source hash."]
+}
