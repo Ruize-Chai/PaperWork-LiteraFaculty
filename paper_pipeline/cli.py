@@ -9,6 +9,7 @@ from .audit import audit, invalidation_report
 from .compiler import compile_to
 from .ir import ValidationError, load_ir, to_warmup
 from .language import refine_text
+from .workflow import classify_task, initialize_paper_context, make_paper_plan, prewrite_check, postwrite_audit
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -19,6 +20,22 @@ def main(argv: list[str] | None = None) -> int:
     subs.add_parser("audit", help="run deterministic scientific consistency checks")
     subs.add_parser("status", help="summarize claims, evidence, and sections")
     subs.add_parser("warmup", help="emit a compact project handoff JSON")
+    workflow = subs.add_parser("workflow", help="paper workflow initialization, routing, and checks")
+    workflow_sub = workflow.add_subparsers(dest="workflow_command", required=True)
+    classify = workflow_sub.add_parser("classify", help="classify a paper or figure task")
+    classify.add_argument("prompt")
+    initialize = workflow_sub.add_parser("initialize", help="discover concise manuscript and scientific context")
+    initialize.add_argument("--root", default=".", help="repository root (default: current directory)")
+    initialize.add_argument("--prompt", default="", help="optional request used to select relevant context")
+    plan = workflow_sub.add_parser("plan", help="create a lightweight PaperPlan for substantive work")
+    plan.add_argument("prompt")
+    plan.add_argument("--root", default=".")
+    before = workflow_sub.add_parser("prewrite", help="check initialization before a manuscript write")
+    before.add_argument("prompt")
+    before.add_argument("--root", default=".")
+    after = workflow_sub.add_parser("postwrite", help="run post-write manuscript checks")
+    after.add_argument("--root", default=".")
+    after.add_argument("--path", action="append", default=[], help="changed manuscript or figure path")
     comp = subs.add_parser("compile", help="compile Markdown or LaTeX")
     comp.add_argument("--target", choices=("markdown", "latex"), required=True)
     comp.add_argument("--output", required=True)
@@ -29,6 +46,18 @@ def main(argv: list[str] | None = None) -> int:
     inv.add_argument("ids", nargs="+", help="changed object ids")
     args = parser.parse_args(argv)
     try:
+        if args.command == "workflow":
+            if args.workflow_command == "classify":
+                print(json.dumps(classify_task(args.prompt), indent=2))
+            elif args.workflow_command == "initialize":
+                print(json.dumps(initialize_paper_context(args.root, args.prompt), indent=2, ensure_ascii=False))
+            elif args.workflow_command == "plan":
+                print(json.dumps(make_paper_plan(args.prompt, args.root), indent=2, ensure_ascii=False))
+            elif args.workflow_command == "prewrite":
+                print(json.dumps(prewrite_check(args.prompt, args.root), indent=2, ensure_ascii=False))
+            elif args.workflow_command == "postwrite":
+                print(json.dumps(postwrite_audit(args.root, args.path), indent=2, ensure_ascii=False))
+            return 0
         ir = load_ir(args.ir)
         if args.command == "validate":
             print("Paper IR valid (v0.1)")

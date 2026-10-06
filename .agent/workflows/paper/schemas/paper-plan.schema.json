@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "paper-plan.schema.json",
+  "title": "Lightweight PaperPlan",
+  "type": "object",
+  "required": ["operation", "target_sections", "scientific_message", "claims_used", "evidence_used", "figures_used", "tables_used", "citations_needed", "unresolved_risks"],
+  "properties": {
+    "operation": {"type": "string"},
+    "target_sections": {"oneOf": [{"type": "array", "items": {"type": "string"}}, {"const": "unknown"}]},
+    "scientific_message": {"type": "string"},
+    "claims_used": {"type": "array", "items": {"type": "string"}},
+    "evidence_used": {"type": "array", "items": {"type": "string"}},
+    "figures_used": {"type": "array", "items": {"type": "string"}},
+    "tables_used": {"type": "array", "items": {"type": "string"}},
+    "citations_needed": {"oneOf": [{"type": "array"}, {"const": "unknown"}]},
+    "unresolved_risks": {"type": "array"}
+  },
+  "additionalProperties": true
+}
