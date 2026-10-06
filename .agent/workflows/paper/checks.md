@@ -26,4 +26,6 @@ Use this checklist after substantive writing. Report unknown or unautomated chec
 - Manuscript, Paper IR/project status, experiment state, and response-letter versions are compatible.
 - Applicable venue and submission requirements were checked against repository metadata or supplied instructions.
 
-`paper workflow postwrite` performs the available deterministic Paper IR audit and emits this broader review checklist. The checklist is not a semantic proof or a substitute for visual, literature, or scientific review.
+`paper workflow postwrite` performs the available deterministic Paper IR audit and emits this broader review checklist. Declare changed-work conditions explicitly (`--prose-modified`, `--manuscript-output-modified --compile-target markdown|latex`, and `--upstream-evidence-changed ID...`). Supply before/after prose for the meaning-lock gate and acknowledge invalidation review only after inspecting its report.
+
+Use `paper workflow handoff --plan PLAN.json` to report passed, failed, and pending gates. Human reviews remain pending unless each listed requirement is explicitly acknowledged. The checklist is not a semantic proof or a substitute for visual, literature, or scientific review.

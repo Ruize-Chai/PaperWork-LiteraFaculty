@@ -1,0 +1,46 @@
+name: PaperWork CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package
+        run: python -m pip install -e .
+      - name: Run unit and workflow control tests
+        run: python -m unittest discover -s tests -v
+      - name: Check workflow schemas are valid JSON
+        run: |
+          python -m json.tool .agent/workflows/paper/schemas/paper-plan.schema.json > /dev/null
+          python -m json.tool .agent/workflows/paper/schemas/workflow-session.schema.json > /dev/null
+      - name: Validate and audit miniature Paper IR
+        run: |
+          paper initialize --ir examples/miniature/paper.json
+          test -s workflow_session.json
+          paper --ir examples/miniature/paper.json validate
+          paper --ir examples/miniature/paper.json audit
+      - name: Compile Markdown and LaTeX source smoke outputs
+        run: |
+          paper --ir examples/miniature/paper.json compile --target markdown --output "$RUNNER_TEMP/miniature.md"
+          paper --ir examples/miniature/paper.json compile --target latex --output "$RUNNER_TEMP/miniature.tex"
+          test -s "$RUNNER_TEMP/miniature.md"
+          test -s "$RUNNER_TEMP/miniature.tex"
+      - name: Confirm negative fixture is detected
+        run: |
+          if paper --ir examples/miniature/paper_with_error.json audit; then
+            echo "Expected the negative fixture audit to fail" >&2
+            exit 1
+          else
+            status=$?
+            test "$status" -eq 1
+          fi

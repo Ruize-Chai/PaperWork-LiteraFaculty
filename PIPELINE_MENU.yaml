@@ -1,0 +1,165 @@
+schema_version: 1
+workflow: literafaculty
+canonical_source: Paper IR v0.1 JSON
+capabilities:
+  - id: paper-ir-validation
+    status: stable
+    stability: deterministic-core
+    entrypoint: "paper --ir PATH validate"
+    inputs: ["Paper IR v0.1 JSON"]
+    outputs: ["validation result"]
+    required_gates: []
+    notes: "Standard-library structural validation and reference-shape checks; not scientific truth validation."
+  - id: claim-evidence-graph
+    status: stable
+    stability: deterministic-core
+    entrypoint: "Paper IR claims, evidence, and dependencies; paper status"
+    inputs: ["claim/evidence objects and IDs", "support links"]
+    outputs: ["registered claim/evidence state", "compact counts and IDs"]
+    required_gates: [paper-ir-validation]
+    notes: "Claims retain explicit status, strength, and evidence-role links. No semantic entailment engine is implemented."
+  - id: dependency-invalidation
+    status: stable
+    stability: deterministic-core
+    entrypoint: "paper --ir PATH invalidate OBJECT_ID..."
+    inputs: ["changed object IDs", "Paper IR dependency graph"]
+    outputs: ["transitive invalidation report"]
+    required_gates: [paper-ir-validation]
+    notes: "Reports affected descendants; does not automatically rebuild or mark objects stale."
+  - id: project-warmup-status
+    status: stable
+    stability: deterministic-core
+    entrypoint: "paper initialize; paper --ir PATH warmup; paper --ir PATH status"
+    inputs: ["repository paths", "optional Paper IR"]
+    outputs: ["workflow_session.json", "compact project handoff/status"]
+    required_gates: []
+    notes: "Initialization records unknown values explicitly and discovers paths without ingesting the repository wholesale."
+  - id: manuscript-compile-markdown
+    status: stable
+    stability: deterministic-core
+    entrypoint: "paper --ir PATH compile --target markdown --output OUT"
+    inputs: ["Paper IR"]
+    outputs: ["compiled Markdown view"]
+    required_gates: [paper-ir-validation]
+    notes: "Does not replace or mutate the canonical Paper IR."
+  - id: manuscript-compile-latex
+    status: stable
+    stability: deterministic-core
+    entrypoint: "paper --ir PATH compile --target latex --output OUT"
+    inputs: ["Paper IR"]
+    outputs: ["generic LaTeX source"]
+    required_gates: [paper-ir-validation]
+    notes: "Generates source only; no TeX engine or venue-specific class compilation is included."
+  - id: manuscript-figure-placement
+    status: experimental
+    stability: limited
+    entrypoint: "Paper IR manuscript_figure objects and [[FIG:ID]] placements"
+    inputs: ["registered figure panels and relative asset paths"]
+    outputs: ["Markdown/LaTeX figure placements"]
+    required_gates: [paper-ir-validation, cross-reference-audit, visual-review]
+    notes: "Limited to the optional compiler figure fields; image provenance is not scientific verification."
+  - id: guarded-language-refinement
+    status: experimental
+    stability: limited
+    entrypoint: "paper --ir PATH refine-language --section ID --output COPY"
+    inputs: ["Paper IR section text"]
+    outputs: ["new JSON copy after meaning-lock checks"]
+    required_gates: [language-meaning-lock, human-review]
+    notes: "Only a narrow deterministic concision rule is implemented; not general copyediting or semantic equivalence checking."
+  - id: scientific-audit
+    status: stable
+    stability: deterministic-core
+    entrypoint: "paper --ir PATH audit"
+    inputs: ["Paper IR claims, support links, and cross-references"]
+    outputs: ["structural/cross-reference audit issues"]
+    required_gates: [paper-ir-validation]
+    notes: "Checks registered links and selected manuscript markers; does not prove claims or verify literature."
+  - id: citation-handling
+    status: experimental
+    stability: limited
+    entrypoint: "Paper IR citations and paper workflow citation pass"
+    inputs: ["citation requirement objects and optional bibliography files"]
+    outputs: ["unresolved citation list"]
+    required_gates: [citation-verification, human-review]
+    notes: "Can retain unresolved requirements; DOI lookup, metadata verification, bibliography formatting, and citation accuracy checks are not implemented."
+  - id: reviewer-system
+    status: planned
+    stability: design-only
+    entrypoint: "docs/reviewer_system.md"
+    inputs: ["future reviewer issue objects and reports"]
+    outputs: ["none implemented"]
+    required_gates: []
+    notes: "Documentation only; no reviewer simulation, issue lifecycle engine, or automated resolution."
+  - id: venue-adapters
+    status: planned
+    stability: design-only
+    entrypoint: "docs/venue_adapters.md"
+    inputs: ["future venue profile"]
+    outputs: ["none implemented"]
+    required_gates: []
+    notes: "No venue-specific formatting adapter is implemented."
+  - id: submission-bundle
+    status: planned
+    stability: design-only
+    entrypoint: "paper workflow and docs"
+    inputs: ["future validated manuscript, figures, metadata, and venue profile"]
+    outputs: ["none implemented"]
+    required_gates: []
+    notes: "No submission package generator or release validator is implemented."
+  - id: external-tool-integrations
+    status: unsupported
+    stability: none
+    entrypoint: null
+    inputs: []
+    outputs: []
+    required_gates: []
+    notes: "Core pipeline has no network, LLM provider, DOI, scholarly database, or TeX-engine integration."
+planned_capabilities:
+  - id: citation-metadata-verification
+    status: planned
+    stability: not-implemented
+    entrypoint: null
+    inputs: ["unresolved citation objects"]
+    outputs: ["verified metadata or explicit unresolved state"]
+    required_gates: [human-review]
+    notes: "Evaluate an established scholarly metadata service before implementing retrieval."
+  - id: numeric-equation-audit
+    status: planned
+    stability: not-implemented
+    entrypoint: null
+    inputs: ["structured quantities, equations, and source evidence"]
+    outputs: ["deterministic consistency findings"]
+    required_gates: [paper-ir-validation, human-review]
+    notes: "No numeric/equation audit engine is currently implemented."
+  - id: figure-freshness
+    status: planned
+    stability: not-implemented
+    entrypoint: null
+    inputs: ["figure source hashes, claim links, and evidence state"]
+    outputs: ["stale figure states and affected sections"]
+    required_gates: [dependency-invalidation-review]
+    notes: "Existing invalidation reports do not persist stale figure state."
+  - id: reviewer-revision-lifecycle
+    status: planned
+    stability: not-implemented
+    entrypoint: "docs/reviewer_system.md"
+    inputs: ["reviewer issue objects and author decisions"]
+    outputs: ["tracked response and resolution states"]
+    required_gates: [human-review]
+    notes: "Reviewer lifecycle remains a documented extension point."
+  - id: venue-and-submission-adapters
+    status: planned
+    stability: not-implemented
+    entrypoint: "docs/venue_adapters.md"
+    inputs: ["validated manuscript and venue profile"]
+    outputs: ["venue-formatted source or submission bundle"]
+    required_gates: [paper-ir-validation, cross-reference-audit, human-review]
+    notes: "No venue formatting or submission archive generation is implemented."
+  - id: evidence-to-figure-invalidation
+    status: planned
+    stability: not-implemented
+    entrypoint: "paper --ir PATH invalidate OBJECT_ID..."
+    inputs: ["changed evidence IDs and graph links"]
+    outputs: ["claim invalidation, stale figure state, and affected manuscript sections"]
+    required_gates: [dependency-invalidation-review]
+    notes: "This extends the current downstream impact report; it will not replace the Paper IR graph."

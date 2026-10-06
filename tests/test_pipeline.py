@@ -1,14 +1,29 @@
 import json
 import runpy
+import os
 import tempfile
 import unittest
+from contextlib import redirect_stderr
+from io import StringIO
 from pathlib import Path
 
 from paper_pipeline.audit import audit, invalidation_report
 from paper_pipeline.compiler import compile_latex, compile_markdown
 from paper_pipeline.ir import ValidationError, load_ir, validate_ir
 from paper_pipeline.language import check_refinement, refine_text
-from paper_pipeline.workflow import classify_task, initialize_paper_context, make_paper_plan, prewrite_check
+from paper_pipeline.workflow import (
+    build_handoff,
+    build_workflow_session,
+    classify_task,
+    initialize_paper_context,
+    make_paper_plan,
+    postwrite_audit,
+    prewrite_check,
+    workflow_initialized,
+    write_workflow_session,
+    _menu_capabilities,
+)
+from paper_pipeline.cli import main as cli_main
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -90,6 +105,8 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(plan["operation"], "continue_manuscript")
         self.assertIn("SEC_RESULTS", plan["target_sections"])
         self.assertIn("C_QUADRATIC", plan["claims_used"])
+        self.assertEqual(plan["planned_stages"], ["INITIALIZE", "DISCOVER", "PLAN", "EXECUTE", "AUDIT", "HANDOFF"])
+        self.assertIn("paper-ir-validation", plan["required_validation_gates"][0])
 
     def test_prewrite_guard_skips_trivial_edits_but_requires_plan_for_drafting(self):
         self.assertFalse(prewrite_check("Make this sentence clearer.", ROOT)["required"])
@@ -127,6 +144,98 @@ class PipelineTests(unittest.TestCase):
         self.assertIn("Pre-write guard", before["hookSpecificOutput"]["additionalContext"])
         after = handle({"hook_event_name": "PostToolUse", "cwd": str(ROOT), "tool_input": {"file_path": "publication/msf-manuscript.tex", "content": large_change}})
         self.assertIn("Post-write audit", after["hookSpecificOutput"]["additionalContext"])
+
+    def test_initialize_writes_compact_portable_workflow_session(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "AGENTS.md").write_text("repository instructions", encoding="utf-8")
+            (root / "PIPELINE_MENU.yaml").write_text(
+                "capabilities:\n  - id: paper-ir-validation\n    status: stable\n    stability: deterministic-core\n    entrypoint: \"paper validate\"\n    required_gates: []\nplanned_capabilities: []\n",
+                encoding="utf-8",
+            )
+            skill = root / ".agent/skills/initialize/SKILL.md"
+            skill.parent.mkdir(parents=True)
+            skill.write_text("initialize", encoding="utf-8")
+            (root / "paper.json").write_text((ROOT / "examples/miniature/paper.json").read_text(), encoding="utf-8")
+            session = build_workflow_session(root)
+            self.assertTrue(session["initialized"])
+            self.assertEqual(session["paper_ir_version"], "0.1")
+            self.assertIn("paper-ir-validation", [item["id"] for item in session["available_capabilities"]])
+            self.assertEqual(session["planned_capabilities"], [])
+            self.assertTrue(session["initialization_inputs"]["agent_instructions_loaded"])
+            self.assertIn(".agent/skills/initialize/SKILL.md", session["initialization_inputs"]["skills"])
+            self.assertEqual(session["project_state"]["paper_context"]["paper_ir"], "paper.json")
+            output, written = write_workflow_session(root)
+            self.assertTrue(output.exists())
+            self.assertTrue(workflow_initialized(root))
+            self.assertEqual(json.loads(output.read_text()), written)
+            with (root / "paper.json").open("a", encoding="utf-8") as source:
+                source.write("\n")
+            self.assertFalse(workflow_initialized(root, "paper.json"))
+
+    def test_capability_menu_separates_available_and_planned_work(self):
+        capabilities, planned, gates = _menu_capabilities((ROOT / "PIPELINE_MENU.yaml").read_text(encoding="utf-8"))
+        self.assertTrue(capabilities)
+        self.assertTrue(planned)
+        self.assertTrue(all(item["status"] == "planned" for item in planned))
+        self.assertIn("paper-ir-validation", [item["id"] for item in capabilities])
+        self.assertIn("human-review", gates)
+
+    def test_execution_without_initialize_warns_but_continues(self):
+        old_cwd = Path.cwd()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "compiled.md"
+            stderr = StringIO()
+            os.chdir(root)
+            try:
+                with redirect_stderr(stderr):
+                    status = cli_main(["--ir", str(ROOT / "examples/miniature/paper.json"), "compile", "--target", "markdown", "--output", str(target)])
+            finally:
+                os.chdir(old_cwd)
+            self.assertEqual(status, 0)
+            self.assertTrue(target.is_file())
+            self.assertIn("workflow is not initialized", stderr.getvalue())
+            self.assertFalse(workflow_initialized(root))
+
+    def test_handoff_reports_only_gates_that_actually_passed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "paper.json").write_text((ROOT / "examples/miniature/paper.json").read_text(), encoding="utf-8")
+            report = postwrite_audit(
+                root,
+                prose_modified=True,
+                language_original="The value may equal 2.",
+                language_revised="The value equals 2.",
+                manuscript_output_modified=True,
+                compile_target="markdown",
+                upstream_evidence_changed=["EXP_STEP_SWEEP"],
+            )
+            self.assertEqual(report["gates"]["paper-ir-validation"]["status"], "passed")
+            self.assertEqual(report["gates"]["language-meaning-lock"]["status"], "failed")
+            self.assertEqual(report["gates"]["compile-smoke"]["status"], "passed")
+            self.assertEqual(report["gates"]["dependency-invalidation-review"]["status"], "pending_human_review")
+            plan = make_paper_plan("Rewrite the Results section.", root)
+            handoff = build_handoff(plan, report)
+            self.assertEqual(handoff["completion_status"], "failed")
+            self.assertFalse(handoff["scientific_claims_verified"])
+            passing = postwrite_audit(
+                root,
+                prose_modified=True,
+                language_original="The value may equal 2.",
+                language_revised="The value may equal 2.",
+                manuscript_output_modified=True,
+                compile_target="latex",
+                upstream_evidence_changed=["EXP_STEP_SWEEP"],
+                invalidation_reviewed=True,
+            )
+            self.assertEqual(passing["quality_gate_status"], "passed")
+            self.assertEqual(len(passing["passed_gates"]), 5)
+            pending = build_handoff(plan, passing)
+            self.assertEqual(pending["completion_status"], "pending_human_review")
+            completed = build_handoff(plan, passing, plan["human_review_requirements"])
+            self.assertEqual(completed["completion_status"], "complete")
+            self.assertEqual(completed["scientific_completion"], "not_established_by_automated_workflow")
 
 
 if __name__ == "__main__":

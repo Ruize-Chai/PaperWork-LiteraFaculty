@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workflow-session.schema.json",
+  "title": "PaperWork repository workflow session",
+  "type": "object",
+  "required": ["initialized", "workflow", "initialized_at", "project_root", "initialization_inputs", "paper_ir_version", "paper_ir_sha256", "available_capabilities", "planned_capabilities", "required_gates", "capability_gates", "project_state", "warnings"],
+  "properties": {
+    "initialized": {"const": true},
+    "workflow": {"const": "literafaculty"},
+    "initialized_at": {"type": "string", "format": "date-time"},
+    "project_root": {"type": "string"},
+    "initialization_inputs": {"type": "object", "required": ["agent_instructions", "agent_instructions_loaded", "capability_menu", "skills"]},
+    "paper_ir_version": {"type": "string"},
+    "paper_ir_sha256": {"type": ["string", "null"]},
+    "available_capabilities": {"type": "array", "items": {"type": "object", "required": ["id", "status", "stability", "entrypoint"], "properties": {"status": {"enum": ["stable", "experimental", "planned", "unsupported", "unknown"]}}}},
+    "planned_capabilities": {"type": "array", "items": {"type": "object", "required": ["id", "status", "stability", "entrypoint"]}},
+    "required_gates": {"type": "array", "items": {"type": "string"}},
+    "capability_gates": {"type": "array", "items": {"type": "string"}},
+    "project_state": {"type": "object"},
+    "warnings": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": true
+}

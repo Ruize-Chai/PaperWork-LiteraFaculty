@@ -3,9 +3,10 @@
   "$id": "paper-plan.schema.json",
   "title": "Lightweight PaperPlan",
   "type": "object",
-  "required": ["operation", "target_sections", "scientific_message", "claims_used", "evidence_used", "figures_used", "tables_used", "citations_needed", "unresolved_risks"],
+  "required": ["request", "operation", "target_sections", "scientific_message", "claims_used", "evidence_used", "figures_used", "tables_used", "citations_needed", "unresolved_risks", "affected_paper_ir_objects", "planned_stages", "expected_outputs", "required_validation_gates", "unresolved_dependencies", "human_review_requirements"],
   "properties": {
     "operation": {"type": "string"},
+    "request": {"type": "string"},
     "target_sections": {"oneOf": [{"type": "array", "items": {"type": "string"}}, {"const": "unknown"}]},
     "scientific_message": {"type": "string"},
     "claims_used": {"type": "array", "items": {"type": "string"}},
@@ -13,7 +14,13 @@
     "figures_used": {"type": "array", "items": {"type": "string"}},
     "tables_used": {"type": "array", "items": {"type": "string"}},
     "citations_needed": {"oneOf": [{"type": "array"}, {"const": "unknown"}]},
-    "unresolved_risks": {"type": "array"}
+    "unresolved_risks": {"type": "array"},
+    "affected_paper_ir_objects": {"type": "object"},
+    "planned_stages": {"type": "array", "items": {"type": "string"}},
+    "expected_outputs": {"type": "array", "items": {"type": "string"}},
+    "required_validation_gates": {"type": "array", "items": {"type": "string"}},
+    "unresolved_dependencies": {"type": "array"},
+    "human_review_requirements": {"type": "array", "items": {"type": "string"}}
   },
   "additionalProperties": true
 }
